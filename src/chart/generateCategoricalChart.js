@@ -148,7 +148,6 @@ const generateCategoricalChart = ({
 
     constructor(props) {
       super(props);
-
       const defaultState = this.constructor.createDefaultState(props);
       const updateId = 0;
       this.state = { ...defaultState, updateId: 0,
@@ -603,9 +602,27 @@ const generateCategoricalChart = ({
       return formatedItems;
     }
 
+    getHighlightRectangle(index) {
+      const { layout } = this.props;
+      const { offset, tooltipAxisBandSize } = this.state;
+      const halfSize = tooltipAxisBandSize / 2;
+
+      const { tooltipTicks } = this.state;
+
+      return {
+        stroke: 'none',
+        fill: '#ccc',
+        x: layout === 'horizontal' ? tooltipTicks[index].coordinate - halfSize : offset.left + 0.5,
+        y: layout === 'horizontal' ? offset.top + 0.5 : tooltipTicks[index].coordinate - halfSize,
+        width: layout === 'horizontal' ? tooltipAxisBandSize : offset.width - 1,
+        height: layout === 'horizontal' ? offset.height - 1 : tooltipAxisBandSize,
+      };
+    }
+
     getCursorRectangle() {
       const { layout } = this.props;
       const { activeCoordinate, offset, tooltipAxisBandSize } = this.state;
+
       const halfSize = tooltipAxisBandSize / 2;
 
       return {
@@ -1101,6 +1118,7 @@ const generateCategoricalChart = ({
     }
 
     renderCursor = (element) => {
+
       const { isTooltipActive, activeCoordinate, activePayload, offset } = this.state;
 
       if (!element || !element.props.cursor || !isTooltipActive || !activeCoordinate) {
@@ -1113,7 +1131,7 @@ const generateCategoricalChart = ({
       if (chartName === 'ScatterChart') {
         restProps = activeCoordinate;
         cursorComp = Cross;
-      } else if (chartName === 'BarChart') {
+      } else if (chartName === 'BarChart' || chartName === 'ComposedChart') {
         restProps = this.getCursorRectangle();
         cursorComp = Rectangle;
       } else if (layout === 'radial') {
@@ -1280,6 +1298,28 @@ const generateCategoricalChart = ({
       });
     }
 
+    renderHighlight = (element) => {
+      if (!element || !element.props.index) {
+        return null;
+      }
+
+      const { offset } = this.state;
+
+      const restProps = this.getHighlightRectangle(element.props.index);
+      const highlightComp = Rectangle;
+
+      const key = element.key || '_recharts-highlight';
+      const highlightProps = {
+        stroke: '#ccc',
+        ...offset,
+        ...restProps,
+        key,
+        className: 'recharts-highlight',
+      };
+
+      return createElement(highlightComp, highlightProps);
+    }
+
     renderBrush = (element) => {
       const { margin, data } = this.props;
       const { offset, dataStartIndex, dataEndIndex, updateId } = this.state;
@@ -1413,6 +1453,7 @@ const generateCategoricalChart = ({
         ReferenceDot: { handler: this.renderReferenceElement },
         XAxis: { handler: this.renderXAxis },
         YAxis: { handler: this.renderYAxis },
+        Rectangle: { handler: this.renderHighlight },
         Brush: { handler: this.renderBrush, once: true },
         Bar: { handler: this.renderGraphicChild },
         Line: { handler: this.renderGraphicChild },
