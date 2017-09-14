@@ -1309,10 +1309,13 @@ const generateCategoricalChart = ({
       const highlightComp = Rectangle;
 
       const key = element.key || '_recharts-highlight';
+
       const highlightProps = {
         stroke: '#ccc',
         ...offset,
         ...restProps,
+        ...(element.props.fill) ? {fill: element.props.fill} : {},
+        ...(element.props.stroke) ? {stroke: element.props.stroke} : {},
         key,
         className: 'recharts-highlight',
       };
